@@ -1707,6 +1707,78 @@ class QwenChatAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("qwen-7b-chat")
 
+class Qwen2ChatAdapter(BaseModelAdapter):
+    """The model adapter for Qwen2/Qwen2-7B-Chat
+    To run this model, you need to ensure additional flash attention installation:
+    ``` bash
+    git clone https://github.com/Dao-AILab/flash-attention
+    cd flash-attention && pip install .
+    pip install csrc/layer_norm
+    pip install csrc/rotary
+    ```
+
+    Since from 2.0, the following change happened
+    - `flash_attn_unpadded_func` -> `flash_attn_varlen_func`
+    - `flash_attn_unpadded_qkvpacked_func` -> `flash_attn_varlen_qkvpacked_func`
+    - `flash_attn_unpadded_kvpacked_func` -> `flash_attn_varlen_kvpacked_func`
+    You may need to revise the code in: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/modeling_qwen.py#L69
+    to from flash_attn.flash_attn_interface import flash_attn_varlen_func as flash_attn_unpadded_func
+    """
+
+    def match(self, model_path: str):
+        return "qwen2" in model_path.lower()
+
+    def float_set(self, config, option):
+        config.bf16 = False
+        config.fp16 = False
+        config.fp32 = False
+
+        if option == "bf16":
+            config.bf16 = True
+        elif option == "fp16":
+            config.fp16 = True
+        elif option == "fp32":
+            config.fp32 = True
+        else:
+            print("Invalid option. Please choose one from 'bf16', 'fp16' and 'fp32'.")
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from transformers.generation import GenerationConfig
+
+        revision = from_pretrained_kwargs.get("revision", "main")
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+        )
+        # NOTE: if you use the old version of model file, please remove the comments below
+        # config.use_flash_attn = False
+        self.float_set(config, "fp16")
+        generation_config = GenerationConfig.from_pretrained(
+            model_path, trust_remote_code=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        ).eval()
+        if hasattr(model.config, "use_dynamic_ntk") and model.config.use_dynamic_ntk:
+            model.config.max_sequence_length = 16384
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        tokenizer.eos_token_id = config.eos_token_id
+        tokenizer.bos_token_id = config.bos_token_id
+        tokenizer.pad_token_id = generation_config.pad_token_id
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.bos_token_id = tokenizer.bos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("qwen2-7b-instruct")
 
 class BGEAdapter(BaseModelAdapter):
     """The model adapter for BGE (e.g., BAAI/bge-large-en-v1.5)"""
@@ -2224,6 +2296,7 @@ register_model_adapter(NousHermesAdapter)
 register_model_adapter(MistralAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
+register_model_adapter(Qwen2ChatAdapter)
 register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)

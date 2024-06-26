@@ -444,6 +444,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["qwen2-7b-instruct"],
+    "Qwen2",
+    "https://modelscope.cn/models/qwen/Qwen2-7B-Instruct",
+    "Qwen is a multi-language large-scale language model (LLM), developed by Damo Academy.",
+)
+
+register_model_info(
     ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
     "Llama2-Chinese",
     "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
