@@ -39,7 +39,7 @@ check_folder_existence() {
   if [ ! -d "/model_repos/CustomLLM/$1" ]; then
     echo "The $1 folder does not exist under QAnything/assets/custom_models/. Please check your setup."
     echo "在QAnything/assets/custom_models/下不存在$1文件夹。请检查您的模型文件。"
-    exit 1
+    # exit 1
   fi
 }
 
