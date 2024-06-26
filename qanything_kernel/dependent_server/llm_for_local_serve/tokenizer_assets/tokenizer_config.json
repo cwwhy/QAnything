@@ -1,10 +1,10 @@
 {
   "remove_space": false,
   "do_lower_case": false,
-  "tokenizer_class": "QWenTokenizer",
+  "tokenizer_class": "QWen2Tokenizer",
   "auto_map": {
     "AutoTokenizer": [
-      "tokenization_qwen.QWenTokenizer",
+      "tokenization_qwen.QWen2Tokenizer",
       null
       ]
   }

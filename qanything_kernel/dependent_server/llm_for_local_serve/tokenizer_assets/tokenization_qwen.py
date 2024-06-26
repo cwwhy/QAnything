@@ -55,7 +55,7 @@ def _load_tiktoken_bpe(tiktoken_bpe_file: str) -> Dict[bytes, int]:
     }
 
 
-class QWenTokenizer(PreTrainedTokenizer):
+class QWen2Tokenizer(PreTrainedTokenizer):
     """QWen tokenizer."""
 
     vocab_files_names = VOCAB_FILES_NAMES
